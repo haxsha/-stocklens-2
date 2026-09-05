@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockLens — Company & Market Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◆</span>
+    <span class="brand-name">StockLens</span>
+  </div>
+  <div class="topbar-tag">Company &amp; Market Intelligence</div>
+</header>
+
+<section class="hero" id="hero">
+  <p class="hero-eyebrow">Enter a ticker to begin</p>
+  <h1 class="hero-title">Know the company<br>behind the chart.</h1>
+  <form id="search-form" class="search-form" autocomplete="off">
+    <input id="ticker-input" type="text" placeholder="AAPL, MSFT, TSLA, JPM…" maxlength="10" spellcheck="false">
+    <button type="submit">Look up</button>
+  </form>
+  <div id="search-error" class="search-error"></div>
+  <div class="hero-hint">Try: <button class="chip" data-t="AAPL">AAPL</button><button class="chip" data-t="MSFT">MSFT</button><button class="chip" data-t="NVDA">NVDA</button><button class="chip" data-t="TSLA">TSLA</button><button class="chip" data-t="JPM">JPM</button></div>
+</section>
+
+<div id="loader" class="loader hidden">
+  <div class="loader-bar"></div>
+  <span id="loader-text">Pulling market data…</span>
+</div>
+
+<main id="dashboard" class="dashboard hidden">
+
+  <section class="identity">
+    <div class="identity-main">
+      <div class="identity-top">
+        <span id="c-symbol" class="c-symbol"></span>
+        <span id="c-exchange" class="c-exchange"></span>
+      </div>
+      <h2 id="c-name" class="c-name"></h2>
+      <div class="identity-meta">
+        <span id="c-sector"></span>
+        <span class="dot">·</span>
+        <span id="c-industry"></span>
+        <span class="dot">·</span>
+        <span id="c-country"></span>
+      </div>
+      <p id="c-summary" class="c-summary"></p>
+    </div>
+    <div class="identity-price">
+      <div id="c-price" class="c-price">—</div>
+      <div id="c-change" class="c-change">—</div>
+      <div class="range-bar">
+        <span id="c-low" class="range-label"></span>
+        <div class="range-track"><div id="range-fill" class="range-fill"></div><div id="range-dot" class="range-dot"></div></div>
+        <span id="c-high" class="range-label"></span>
+      </div>
+      <div class="range-caption">52-week range</div>
+    </div>
+  </section>
+
+  <section class="stat-rail">
+    <div class="stat"><span class="stat-label">Market Cap</span><span id="s-mcap" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">P/E (TTM)</span><span id="s-pe" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">Forward P/E</span><span id="s-fpe" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">EPS (TTM)</span><span id="s-eps" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">Dividend Yield</span><span id="s-div" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">Beta</span><span id="s-beta" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">Employees</span><span id="s-emp" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">Listed Since</span><span id="s-listed" class="stat-val">—</span></div>
+  </section>
+
+  <section class="panel chart-panel">
+    <div class="panel-head">
+      <h3>Price History</h3>
+      <div class="range-toggle" id="range-toggle">
+        <button data-range="6mo">6M</button>
+        <button data-range="1y">1Y</button>
+        <button data-range="5y" class="active">5Y</button>
+        <button data-range="max">MAX</button>
+      </div>
+    </div>
+    <canvas id="priceChart" height="110"></canvas>
+    <canvas id="volumeChart" height="40"></canvas>
+  </section>
+
+  <section class="panel-grid">
+    <div class="panel">
+      <div class="panel-head"><h3>Technical Signal</h3></div>
+      <canvas id="rsiChart" height="70"></canvas>
+      <p class="panel-note" id="rsi-note"></p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Margins &amp; Returns</h3></div>
+      <div class="metric-grid" id="margin-grid"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h3>Financial Statements</h3><span class="panel-sub">Annual, most recent 4 years — figures in reported currency</span></div>
+    <div class="tabs" id="fin-tabs">
+      <button data-tab="income" class="active">Income</button>
+      <button data-tab="balance">Balance Sheet</button>
+      <button data-tab="cashflow">Cash Flow</button>
+    </div>
+    <div class="table-wrap"><table id="fin-table"><thead></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="panel forecast-panel">
+    <div class="panel-head">
+      <h3>Statistical Projection</h3>
+      <div class="range-toggle" id="forecast-toggle">
+        <button data-days="30">30D</button>
+        <button data-days="90" class="active">90D</button>
+        <button data-days="180">180D</button>
+      </div>
+    </div>
+    <div class="forecast-banner">
+      <strong>This is not a prediction.</strong> It's a statistical extrapolation of past price drift and volatility (Geometric Brownian Motion — the same base model behind options pricing). The shaded cone widens because uncertainty grows over time, not shrinks. Real prices are driven by news, earnings, and events no historical model can see.
+    </div>
+    <canvas id="forecastChart" height="100"></canvas>
+    <div class="forecast-stats">
+      <div><span class="stat-label">Historical annualized drift</span><span id="f-drift" class="stat-val">—</span></div>
+      <div><span class="stat-label">Historical annualized volatility</span><span id="f-vol" class="stat-val">—</span></div>
+      <div><span class="stat-label">Analyst mean target</span><span id="f-target" class="stat-val">—</span></div>
+    </div>
+  </section>
+
+  <section class="panel macro-panel">
+    <div class="panel-head"><h3>Macro Context</h3><span class="panel-sub">Broader factors that move every stock</span></div>
+    <div class="macro-grid" id="macro-grid"></div>
+  </section>
+
+  <footer class="site-footer">
+    <p>Data via Yahoo Finance. Educational tool — not financial advice. Prices delayed. Built by <span id="footer-name">you</span>.</p>
+  </footer>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
